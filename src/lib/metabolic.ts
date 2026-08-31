@@ -58,7 +58,7 @@ export function median(values: number[]): number {
   const v = values.filter((n) => Number.isFinite(n)).slice().sort((a, b) => a - b);
   if (!v.length) return NaN;
   const mid = Math.floor(v.length / 2);
-  return v.length % 2 ? v[mid] : (v[mid - 1] + v[mid]) / 2;
+  return v.length % 2 ? v[mid]! : (v[mid - 1]! + v[mid]!) / 2;
 }
 
 export function mean(values: number[]): number {
@@ -170,7 +170,7 @@ function normaliseHeader(h: string): string {
 export function parseCsv(text: string): Record<string, string>[] {
   const lines = text.replace(/\r/g, "").split("\n").filter((l) => l.trim().length);
   if (!lines.length) return [];
-  const headers = lines[0].split(",").map((h) => h.trim());
+  const headers = lines[0]!.split(",").map((h) => h.trim());
   return lines.slice(1).map((line) => {
     const cells = line.split(",");
     const row: Record<string, string> = {};
@@ -205,17 +205,17 @@ export function preprocessData(rows: Record<string, string>[]): Cohort {
       const target = COLUMN_MAP[normaliseHeader(key)];
       if (target) canon[target] = value;
     }
-    const heightCm = num(canon.heightCm);
-    const weightKg = num(canon.weightKg);
+    const heightCm = num(canon['heightCm']);
+    const weightKg = num(canon['weightKg']);
     return {
-      age: num(canon.age),
-      gender: (canon.gender || "Unknown").trim(),
+      age: num(canon['age']),
+      gender: (canon['gender'] || "Unknown").trim(),
       // invalid (<=0) height/weight is treated as missing, not as a real value
       heightCm: heightCm !== null && heightCm > 0 ? heightCm : null,
       weightKg: weightKg !== null && weightKg > 0 ? weightKg : null,
-      waistCm: num(canon.waistCm),
-      glucose: num(canon.glucose),
-      hba1c: num(canon.hba1c),
+      waistCm: num(canon['waistCm']),
+      glucose: num(canon['glucose']),
+      hba1c: num(canon['hba1c']),
     };
   });
 
@@ -227,12 +227,7 @@ export function preprocessData(rows: Record<string, string>[]): Cohort {
     age: median(mapped.map((r) => r.age!).filter(Number.isFinite)),
   };
 
-  const imputed: Record<string, number> = {
-    Height_cm: 0,
-    Weight_kg: 0,
-    Blood_Glucose: 0,
-    HbA1c: 0,
-  };
+  const imputed = { Height_cm: 0, Weight_kg: 0, Blood_Glucose: 0, HbA1c: 0 };
 
   const participants: Participant[] = [];
   for (const r of mapped) {
@@ -241,10 +236,10 @@ export function preprocessData(rows: Record<string, string>[]): Cohort {
     let glucose = r.glucose;
     let hba1c = r.hba1c;
 
-    if (heightCm === null) (heightCm = medians.heightCm), imputed.Height_cm++;
-    if (weightKg === null) (weightKg = medians.weightKg), imputed.Weight_kg++;
-    if (glucose === null) (glucose = medians.glucose), imputed.Blood_Glucose++;
-    if (hba1c === null) (hba1c = medians.hba1c), imputed.HbA1c++;
+    if (heightCm === null) (heightCm = medians.heightCm), imputed['Height_cm']++;
+    if (weightKg === null) (weightKg = medians.weightKg), imputed['Weight_kg']++;
+    if (glucose === null) (glucose = medians.glucose), imputed['Blood_Glucose']++;
+    if (hba1c === null) (hba1c = medians.hba1c), imputed['HbA1c']++;
 
     const age = r.age !== null && r.age > 0 && r.age < 120 ? r.age : medians.age;
     const bmi = calculateBmi(weightKg, heightCm);
@@ -269,7 +264,7 @@ export function preprocessData(rows: Record<string, string>[]): Cohort {
       rowsInFile: rows.length,
       rowsAnalysed: participants.length,
       rowsDropped: rows.length - participants.length,
-      imputed,
+      imputed: { ...imputed },
       medians: {
         Height_cm: medians.heightCm,
         Weight_kg: medians.weightKg,
@@ -439,7 +434,7 @@ export function histogram(values: number[], bins: number, decimals = 0) {
   }));
   for (const v of valid) {
     const idx = Math.min(bins - 1, Math.floor((v - min) / width));
-    buckets[idx].count++;
+    buckets[idx]!.count++;
   }
   return buckets.map((b) => ({
     label: b.start.toFixed(decimals),
