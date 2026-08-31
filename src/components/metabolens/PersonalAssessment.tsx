@@ -65,8 +65,8 @@ function Field({
   optional?: boolean;
   value: string;
   onChange: (v: string) => void;
-  error?: string;
-  placeholder?: string;
+  error?: string | undefined;
+  placeholder?: string | undefined;
 }) {
   return (
     <label className="block">
